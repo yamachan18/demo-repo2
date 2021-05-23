@@ -1,0 +1,152 @@
+---
+title: "clustering practice"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Ref: https://www.datanovia.com/en/courses/partitional-clustering-in-r-the-essentials/
+stats package for computing K-means
+cluster package for computing PAM and CLARA algorithms
+factoextra for beautiful visualization of clusters
+```{r}
+library(stats)
+library(cluster)
+library(factoextra)
+```
+
+
+```{r}
+# Load data
+data("USArrests")
+my_data <- USArrests
+# Remove any missing value (i.e, NA values for not available)
+my_data <- na.omit(my_data)
+# Scale variables
+my_data <- scale(my_data)
+# View the firt 3 rows
+head(my_data, n = 3)
+```
+```{r}
+fviz_nbclust(my_data, kmeans,
+             method = "gap_stat")
+```
+
+k-means clustering visualization
+```{r}
+set.seed(123)
+km.res <- kmeans(my_data, 3, nstart = 25)
+
+# Visualize
+fviz_cluster(km.res, data = my_data, 
+             ellipse.type = "convex",
+             palette = "jco",
+             repel = TRUE,
+             ggtheme = theme_minimal())
+```
+
+PAM clustering visualization
+```{r}
+# Compute PAM
+pam.res <- pam(my_data, 4)
+# Visualize
+fviz_cluster(pam.res)
+```
+
+^ Dim 1 and Dim 2 are PC1 and PC2
+
+# k-means clustering
+k-means: K-means clustering (MacQueen 1967), in which, each cluster is represented by the center or means of the data points belonging to the cluster. The K-means method is sensitive to anomalous data points and outliers. Uses "centroids" using "Euclidean distances" (shortest distance between 2 points, on a 2D plane is the same as pythagorean theorem).
+Load data and "scale" it since there are multiple variables with different ranges of values and you don't want the clustering to depend on one variable's unit.
+```{r}
+data("USArrests")      # Loading the data set
+df <- scale(USArrests) # Scaling the data
+
+# View the firt 3 rows of the data
+head(df, n = 3)
+```
+
+```{r}
+# Compute hierarchical k-means clustering
+res.hk <-hkmeans(df, 4)
+```
+
+```{r}
+# Visualize the tree
+fviz_dend(res.hk, cex = 0.6, palette = "jco", 
+          rect = TRUE, rect_border = "jco", rect_fill = TRUE)
+```
+
+```{r}
+# Visualize the hkmeans final clusters
+fviz_cluster(res.hk, palette = "jco", repel = TRUE,
+             ggtheme = theme_classic())
+```
+
+
+How to choose "centers" or "k"?
+```{r}
+# total sum of squares measures the total variance in the data.
+fviz_nbclust(df, FUNcluster = kmeans, method="wss")
+
+```
+
+
+Calculation
+Default max iteration is 10
+```{r}
+stats::kmeans(df, centers=4, iter.max = 10, nstart = 1)
+```
+k-means has some issues including:The final results obtained is sensitive to the initial random selection of cluster centers. Why is it a problem? Because, for every different run of the algorithm on the same dataset, you may choose different set of initial centers. This may lead to different clustering results on different runs of the algorithm.
+Compute K-means algorithm several times with different initial cluster centers. The run with the lowest total within-cluster sum of square is selected as the final clustering solution.
+
+https://www.datanovia.com/en/lessons/hierarchical-k-means-clustering-optimize-clusters/
+Hierarchical clustering using k-means: Hierarchical clustering generates a visualization of clusters using a "dendrogram", but you do not need the number of clusters to generate this. It can be used as a method of determining appropriate number of clusters.
+```{r}
+# Compute hierarchical k-means clustering
+res.hk <-factoextra::hkmeans(df, 4)
+# Elements returned by hkmeans()
+names(res.hk)
+```
+
+```{r}
+# Visualize the tree
+fviz_dend(res.hk, cex = 0.6, palette = "jco", 
+          rect = TRUE, rect_border = "jco", rect_fill = TRUE)
+```
+
+```{r}
+# Visualize the hkmeans final clusters
+fviz_cluster(res.hk, palette = "jco", repel = TRUE,
+             ggtheme = theme_classic())
+```
+
+
+PAM (k-medoids): K-medoids clustering or PAM (Partitioning Around Medoids, Kaufman & Rousseeuw, 1990), in which, each cluster is represented by one of the objects in the cluster. PAM is less sensitive to outliers compared to k-means.
+
+First, determine k again: The average silhouette measures the quality of a clustering. A high average silhouette width indicates a good clustering.
+
+```{r}
+#default
+fviz_nbclust(df, FUNcluster = kmeans, method="silhouette") 
+```
+
+Use k=2
+```{r}
+pam.res<-cluster::pam(x=df, k=2, metric = "euclidean", stand = FALSE)
+```
+Add the cluster category as a new column to original data table.
+```{r}
+dd <- cbind(USArrests, cluster = pam.res$cluster)
+head(dd, n = 3)
+```
+Visualize PAM.
+```{r}
+fviz_cluster(pam.res)
+```
+
+tsne
+PCA
+
